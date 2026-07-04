@@ -1,22 +1,6 @@
-# 📄 Complete Professional README.md for CivicSync AI
-
-Here's your comprehensive, professional README.md that perfectly aligns with your abstract and project implementation:
-
----
-
-```markdown
-# 🏙️ CivicSync AI
+# 🏙️ CivicSync AI - Smart Urban Resource Management Platform
 
 ### AI, IoT & Cloud-Powered Smart Urban Resource Management Platform
-
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104.1-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/React-18.2.0-61DAFB?style=flat-square&logo=react)](https://reactjs.org/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb)](https://www.mongodb.com/atlas)
-[![AWS](https://img.shields.io/badge/AWS-S3%20%7C%20Lambda-232F3E?style=flat-square&logo=amazon-aws)](https://aws.amazon.com/)
-[![OpenRouter](https://img.shields.io/badge/OpenRouter-AI-FF6B00?style=flat-square)](https://openrouter.ai/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-
----
 
 ## 📌 Project Overview
 
