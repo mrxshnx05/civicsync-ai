@@ -16,7 +16,7 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler()  # Output to console
+        logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
@@ -107,7 +107,6 @@ async def health_check():
 
 @app.get("/favicon.ico")
 async def favicon():
-    """Return empty response for favicon to avoid 404 errors"""
     return Response(status_code=204)
 
 # --- Report Endpoints ---
@@ -180,7 +179,8 @@ async def create_report(
             "estimated_resolution_hours": int(ai_result.get("estimated_resolution_hours", 48)),
             "severity_score": int(ai_result.get("severity_score", 5)),
             "user_email": user_email,
-            "image_url": None
+            "image_url": None,
+            "summary": ai_result.get("summary", "Issue reported. Awaiting classification.")  # ✅ ADD THIS
         }
         
         # Save to database or in-memory
@@ -191,29 +191,12 @@ async def create_report(
                 db_service.save_report(report)
                 logger.info(f"✅ Report saved to MongoDB: {report_id}")
                 saved_to_db = True
-                
-                # Verify the report was actually saved
-                try:
-                    verify = db_service.get_report(report_id)
-                    if verify:
-                        logger.info(f"✅ Verified report {report_id} exists in MongoDB")
-                    else:
-                        logger.warning(f"⚠️ Report {report_id} not found after save in MongoDB!")
-                        saved_to_db = False
-                except Exception as e:
-                    logger.error(f"⚠️ Verification error: {e}")
-                    saved_to_db = False
-                    
+            else:
+                reports_db[report_id] = report
+                logger.info(f"✅ Report saved in-memory: {report_id}")
         except Exception as e:
-            logger.error(f"⚠️ Save to MongoDB error: {e}")
-            saved_to_db = False
-            import traceback
-            logger.error(traceback.format_exc())
-        
-        # If MongoDB save failed or not connected, use in-memory
-        if not saved_to_db:
+            logger.error(f"⚠️ Save error: {e}, using in-memory")
             reports_db[report_id] = report
-            logger.info(f"✅ Report saved to in-memory storage: {report_id}")
         
         logger.info(f"🎉 Report {report_id} created successfully")
         return report
@@ -231,35 +214,43 @@ async def get_all_reports():
     try:
         logger.info("📋 Fetching all reports...")
         
+        reports = []
+        
         # Try MongoDB first
         if db_service and db_service.is_connected():
             try:
                 reports = db_service.get_all_reports()
                 if reports:
                     logger.info(f"✅ Retrieved {len(reports)} reports from MongoDB")
-                    # Sort by priority
-                    priority_order = {"High": 0, "Medium": 1, "Low": 2}
-                    reports.sort(key=lambda x: priority_order.get(x.get("priority", "Medium"), 1))
-                    return reports
                 else:
-                    logger.info("📭 No reports found in MongoDB, checking memory...")
+                    logger.info("📭 No reports in MongoDB, checking memory...")
+                    reports = list(reports_db.values())
             except Exception as e:
                 logger.error(f"❌ Error fetching from MongoDB: {e}")
-        
-        # Fallback to memory
-        reports = list(reports_db.values())
-        logger.info(f"✅ Retrieved {len(reports)} reports from memory")
+                reports = list(reports_db.values())
+        else:
+            reports = list(reports_db.values())
+            logger.info(f"✅ Retrieved {len(reports)} reports from memory")
         
         # Sort by priority
         priority_order = {"High": 0, "Medium": 1, "Low": 2}
         reports.sort(key=lambda x: priority_order.get(x.get("priority", "Medium"), 1))
+        
+        # Ensure all reports have required fields
+        for report in reports:
+            if 'ai_summary' not in report:
+                report['ai_summary'] = report.get('summary', 'No summary available')
+            if 'summary' not in report:
+                report['summary'] = report.get('ai_summary', 'No summary available')
+        
         return reports
         
     except Exception as e:
         logger.error(f"❌ Error fetching reports: {e}")
         import traceback
         logger.error(traceback.format_exc())
-        return list(reports_db.values())
+        # Return empty array instead of error
+        return []
 
 @app.get("/api/reports/{report_id}")
 async def get_report(report_id: str):
@@ -267,19 +258,15 @@ async def get_report(report_id: str):
     try:
         logger.info(f"📋 Fetching report: {report_id}")
         
-        # Try MongoDB first
         if db_service and db_service.is_connected():
             try:
                 report = db_service.get_report(report_id)
                 if report:
                     logger.info(f"✅ Report {report_id} found in MongoDB")
                     return report
-                else:
-                    logger.info(f"📭 Report {report_id} not in MongoDB, checking memory...")
             except Exception as e:
                 logger.error(f"❌ Error fetching from MongoDB: {e}")
         
-        # Fallback to memory
         report = reports_db.get(report_id)
         if report:
             logger.info(f"✅ Report {report_id} found in memory")
@@ -292,8 +279,6 @@ async def get_report(report_id: str):
         raise
     except Exception as e:
         logger.error(f"❌ Error fetching report {report_id}: {e}")
-        import traceback
-        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/reports/{report_id}")
@@ -308,7 +293,6 @@ async def update_report_status(report_id: str, status: str):
         
         updated = False
         
-        # Try MongoDB first
         if db_service and db_service.is_connected():
             try:
                 updated = db_service.update_status(report_id, status)
@@ -318,7 +302,6 @@ async def update_report_status(report_id: str, status: str):
             except Exception as e:
                 logger.error(f"❌ Error updating in MongoDB: {e}")
         
-        # Fallback to memory
         if report_id in reports_db:
             reports_db[report_id]["status"] = status
             updated = True
@@ -334,8 +317,6 @@ async def update_report_status(report_id: str, status: str):
         raise
     except Exception as e:
         logger.error(f"❌ Error updating report {report_id}: {e}")
-        import traceback
-        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 # --- Parking Endpoints ---
@@ -365,8 +346,6 @@ async def book_parking(spot_id: int):
         raise
     except Exception as e:
         logger.error(f"❌ Error booking parking {spot_id}: {e}")
-        import traceback
-        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 # --- Stats Endpoint ---
@@ -378,7 +357,6 @@ async def get_stats():
         reports = []
         source = "memory"
         
-        # Try MongoDB first
         if db_service and db_service.is_connected():
             try:
                 reports = db_service.get_all_reports()
@@ -386,7 +364,6 @@ async def get_stats():
                     source = "MongoDB"
                     logger.info(f"📊 Retrieved {len(reports)} reports from MongoDB")
                 else:
-                    logger.info("📭 No reports in MongoDB, using memory...")
                     reports = list(reports_db.values())
             except Exception as e:
                 logger.error(f"❌ Error fetching from MongoDB: {e}")
@@ -418,8 +395,6 @@ async def get_stats():
         }
     except Exception as e:
         logger.error(f"❌ Error fetching stats: {e}")
-        import traceback
-        logger.error(traceback.format_exc())
         return {
             "total_reports": len(reports_db),
             "high_priority": 0,
