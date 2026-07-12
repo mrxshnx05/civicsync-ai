@@ -24,5 +24,3 @@ frontend/dist/
 # OS
 .DS_Store
 Thumbs.db
-
-template.yaml
