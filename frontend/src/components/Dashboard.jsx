@@ -6,6 +6,12 @@ import { useInView } from 'react-intersection-observer';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
+console.log("========== ENV ==========");
+console.log(import.meta.env);
+console.log("VITE_API_URL =", import.meta.env.VITE_API_URL);
+console.log("API_BASE =", API_BASE);
+console.log("=========================");
+
 // Stat Card Component with 3D tilt
 const StatCard = ({ icon, label, value, color, delay }) => {
   const cardRef = useRef(null);
@@ -116,11 +122,23 @@ function Dashboard() {
         axios.get(`${API_BASE}/api/stats`),
         axios.get(`${API_BASE}/api/reports`)
       ]);
+
+      console.log("Stats:", statsRes.data);
+      console.log("Reports:", reportsRes.data);
+
       setStats(statsRes.data);
-      setRecentReports(reportsRes.data.slice(0, 5));
-      setLoading(false);
+
+      if (Array.isArray(reportsRes.data)) {
+        setRecentReports(reportsRes.data.slice(0, 5));
+      } else {
+        console.error("Reports is not an array:", reportsRes.data);
+        setRecentReports([]);
+      }
+
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error("Error fetching dashboard data:", error);
+      setRecentReports([]);
+    } finally {
       setLoading(false);
     }
   };
@@ -227,8 +245,12 @@ function Dashboard() {
           <p className="text-gray-500 text-center py-8">No reports submitted yet. Be the first!</p>
         ) : (
           <div className="space-y-3">
-            {recentReports.map((report, index) => (
-              <RecentReportItem key={report.id} report={report} index={index} />
+            {(Array.isArray(recentReports) ? recentReports : []).map((report, index) => (
+              <RecentReportItem
+                key={report.id}
+                report={report}
+                index={index}
+              />
             ))}
           </div>
         )}

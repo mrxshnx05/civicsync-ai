@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: CivicSync AI Backend
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 30
+    MemorySize: 512
+
+Resources:
+
+  CivicSyncFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: civicsync-ai-backend
+
+      CodeUri: backend/
+
+      Handler: app.main.handler
+
+      Runtime: python3.11
+
+      Architectures:
+        - x86_64
+
+      Events:
+
+        Root:
+          Type: HttpApi
+          Properties:
+            Path: /
+            Method: ANY
+
+        Proxy:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+
+      Environment:
+        Variables:
+
+          # ---------- OpenRouter ----------
+          OPENROUTER_API_KEY: sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+          OPENROUTER_MODEL: google/gemini-2.5-flash:free
+
+          # ---------- MongoDB ----------
+          MONGODB_URI: mongodb+srv://civicsync_admin:PreRos2205@civicsync-cluster.4wfihxy.mongodb.net/?retryWrites=true&w=majority&appName=CivicSync-Cluster
+          MONGODB_DATABASE: civicsync
+
+          # ---------- DynamoDB ----------
+          DYNAMODB_TABLE: civicsync-reports
+
+          # ---------- S3 ----------
+          AWS_S3_BUCKET: civicsync-images-365705517703
+
+      Policies:
+        - AWSLambdaBasicExecutionRole
+
+        - AmazonS3FullAccess
+
+        - AmazonDynamoDBFullAccess
+
+Outputs:
+
+  ApiUrl:
+    Description: HTTP API URL
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+
+  FunctionArn:
+    Description: Lambda Function ARN
+    Value: !GetAtt CivicSyncFunction.Arn
+
+  FunctionName:
+    Description: Lambda Function Name
+    Value: !Ref CivicSyncFunction

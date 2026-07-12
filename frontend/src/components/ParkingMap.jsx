@@ -47,6 +47,9 @@ const createParkingIcon = (isAvailable) => {
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
+console.log("API_BASE =", API_BASE);
+console.log("ENV =", import.meta.env);
+
 function ParkingMap() {
   const [parkingSpots, setParkingSpots] = useState([]);
   const [loading, setLoading] = useState(true);
