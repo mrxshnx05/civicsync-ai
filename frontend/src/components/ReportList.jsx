@@ -307,7 +307,10 @@ function ReportList() {
               key={report.id}
               report={report}
               index={index}
-              onClick={() => setSelectedReport(report)}
+              onClick={() => {
+                  setSelectedReport(report);
+                  setShowModal(true);
+              }}
               getPriorityBadge={getPriorityBadge}
               getStatusBadge={getStatusBadge}
               getCategoryEmoji={getCategoryEmoji}
