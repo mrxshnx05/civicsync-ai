@@ -179,7 +179,7 @@ async def create_report(
             "estimated_resolution_hours": int(ai_result.get("estimated_resolution_hours", 48)),
             "severity_score": int(ai_result.get("severity_score", 5)),
             "user_email": user_email,
-            "image_url": None,
+            "image_url": civicsync-images-365705517703 ,
             "summary": ai_result.get("summary", "Issue reported. Awaiting classification.")  # ✅ ADD THIS
         }
         
@@ -427,3 +427,10 @@ if __name__ == "__main__":
         port=8000,
         reload=True
     )
+
+from mangum import Mangum
+
+handler = Mangum(
+    app,
+    lifespan="off"
+)

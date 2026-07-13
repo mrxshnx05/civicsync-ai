@@ -3,7 +3,13 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
+console.log("========== ENV ==========");
+console.log(import.meta.env);
+console.log("VITE_API_URL =", import.meta.env.VITE_API_URL);
+console.log("API_BASE =", API_BASE);
+console.log("=========================");
 
 function ReportList() {
   const [reports, setReports] = useState([]);
@@ -301,7 +307,10 @@ function ReportList() {
               key={report.id}
               report={report}
               index={index}
-              onClick={() => setSelectedReport(report)}
+              onClick={() => {
+                  setSelectedReport(report);
+                  setShowModal(true);
+              }}
               getPriorityBadge={getPriorityBadge}
               getStatusBadge={getStatusBadge}
               getCategoryEmoji={getCategoryEmoji}

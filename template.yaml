@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: CivicSync AI Backend
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.11
+    MemorySize: 512
+
+Parameters:
+
+  OpenRouterApiKey:
+    Type: String
+    NoEcho: true
+
+  MongoDbUri:
+    Type: String
+    NoEcho: true
+
+Resources:
+
+  CivicSyncFunction:
+    Type: AWS::Serverless::Function
+
+    Properties:
+      FunctionName: civicsync-ai-backend
+
+      CodeUri: backend/
+
+      Handler: app.main.handler
+
+      Runtime: python3.11
+
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+
+      Environment:
+        Variables:
+
+          OPENROUTER_API_KEY: !Ref OpenRouterApiKey
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+          OPENROUTER_MODEL: google/gemini-2.5-flash:free
+
+          MONGODB_URI: !Ref MongoDbUri
+          MONGODB_DATABASE: civicsync
+
+          DYNAMODB_TABLE: civicsync-reports
+
+          AWS_S3_BUCKET: civicsync-images-365705517703
+
+Outputs:
+
+  ApiUrl:
+    Description: API Gateway URL
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"

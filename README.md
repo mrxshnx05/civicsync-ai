@@ -348,16 +348,6 @@ aws s3 sync dist/ s3://your-bucket-name --acl public-read
 
 ---
 
-## 👥 Team AstraMind
-
-|      Role     |    Name   |                     Contribution                        |
-|---------------|-----------|---------------------------------------------------------|
-| **Team Lead** | Roshni M  | Project Management, Backend Development, AI Integration |
-| **Developer** | Dharoun G | Frontend Development, UI/UX Design                      |
-| **Developer** | A Yasmin  | Database Design, Testing, Documentation                 |
-
----
-
 ## 📈 Future Scope
 
 - **Connected IoT Ecosystem**: Integrate real ESP32 sensors for smart parking, streetlights, waste bins
@@ -393,6 +383,6 @@ For questions or collaboration:
   <strong>Building Smarter, Connected, and Sustainable Cities with AI, IoT & AWS Cloud</strong>
 </p>
 <p align="center">
-  © 2026 CivicSync AI - Built for #INCLUDE 1.0 Hackathon
+  © 2026 CivicSync AI
 </p>
 ```
